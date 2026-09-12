@@ -23,6 +23,9 @@ def settings(tmp_path: Path) -> Settings:
     return Settings(
         temp_dir=tmp_path / "tmp",
         piper_models_dir=models_dir,
+        kokoro_models_dir=tmp_path / "kokoro",  # empty: kokoro is not ready in tests
+        tts_engine_fr="piper",
+        tts_engine_en="piper",
         max_pdf_size_mb=1,
         text_chunk_max_chars=80,
     )
@@ -58,8 +61,18 @@ def test_health(client: TestClient) -> None:
     payload = client.get("/api/health").json()
 
     assert payload["status"] == "ok"
+    assert payload["engines"] == {"fr": "piper", "en": "piper"}
     assert payload["voices"] == {"fr": True, "en": True}
     assert payload["max_pdf_size_mb"] == 1
+
+
+def test_health_reports_missing_kokoro_files(settings: Settings, engine: FakeTTSEngine) -> None:
+    settings = settings.model_copy(update={"tts_engine_en": "kokoro"})
+    with TestClient(create_app(settings, engine)) as client:
+        payload = client.get("/api/health").json()
+
+    assert payload["engines"]["en"] == "kokoro"
+    assert payload["voices"] == {"fr": True, "en": False}
 
 
 @pytest.mark.skipif(not ffmpeg_available(), reason="ffmpeg not installed")

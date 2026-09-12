@@ -3,6 +3,7 @@ from app.services.text_cleaner import (
     clean_pages,
     clean_text,
     collapse_whitespace,
+    ensure_sentence_endings,
     fix_hyphenation,
     join_pages,
     merge_soft_line_breaks,
@@ -64,7 +65,7 @@ def test_normalize_artifacts_handles_ligatures_bullets_and_control_chars() -> No
 
 def test_bullets_become_paragraph_breaks_after_cleaning() -> None:
     assert clean_text("Title\n• first item\n• second item") == (
-        "Title\n\nfirst item\n\nsecond item"
+        "Title.\n\nfirst item.\n\nsecond item."
     )
 
 
@@ -105,4 +106,19 @@ def test_clean_pages_end_to_end() -> None:
 
     assert clean_pages(pages) == (
         "This is an important concept about audio.\n\nSecond page text.\n\nThird page text."
+    )
+
+
+def test_ensure_sentence_endings_adds_periods_to_unpunctuated_paragraphs() -> None:
+    text = "Abstract\n\nThe text is fine.\n\nTitle:\n\nA question?\n\nTrailing comma,\n\nQuoted \"end\"\n\nDone (really)."
+
+    assert ensure_sentence_endings(text) == (
+        "Abstract.\n\nThe text is fine.\n\nTitle:\n\nA question?\n\nTrailing comma."
+        "\n\nQuoted \"end.\"\n\nDone (really)."
+    )
+
+
+def test_clean_text_ends_headings_with_a_period() -> None:
+    assert clean_text("1 Introduction\n\nSMS phishing is a problem.") == (
+        "1 Introduction.\n\nSMS phishing is a problem."
     )

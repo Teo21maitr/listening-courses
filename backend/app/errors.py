@@ -41,7 +41,11 @@ class AudioNotReadyError(AppError):
     status_code = 409
 
 
-class PiperNotInstalledError(AppError):
+class TTSNotInstalledError(AppError):
+    status_code = 500
+
+
+class UnknownEngineError(AppError):
     status_code = 500
 
 

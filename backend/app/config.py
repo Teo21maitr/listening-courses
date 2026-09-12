@@ -7,6 +7,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 
 SUPPORTED_LANGUAGES = ("fr", "en")
+SUPPORTED_ENGINES = ("piper", "kokoro")
+
+# espeak-ng language codes used by Kokoro
+KOKORO_LANG_CODES = {"fr": "fr-fr", "en": "en-us"}
 
 
 class VoiceModel(TypedDict):
@@ -28,6 +32,16 @@ class Settings(BaseSettings):
     piper_models_dir: Path = Path("./models/piper")
     piper_voice_fr: str = "fr_FR-siwis-medium"
     piper_voice_en: str = "en_US-lessac-medium"
+    tts_engine_fr: str = "piper"
+    tts_engine_en: str = "kokoro"
+    kokoro_models_dir: Path = Path("./models/kokoro")
+    kokoro_model_file: str = "kokoro-v1.0.onnx"
+    kokoro_voices_file: str = "voices-v1.0.bin"
+    kokoro_voice_fr: str = "ff_siwis"
+    kokoro_voice_en: str = "af_heart"
+    tts_speed: float = 1.0
+    tts_sentence_pause_ms: int = 250
+    tts_paragraph_pause_ms: int = 600
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     frontend_dist_dir: Path | None = None
     job_ttl_hours: float = 6
@@ -52,6 +66,23 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def engines(self) -> dict[str, str]:
+        """Language code -> TTS engine name ("piper" or "kokoro")."""
+        return {"fr": self.tts_engine_fr, "en": self.tts_engine_en}
+
+    @property
+    def kokoro_model_path(self) -> Path:
+        return _resolve(self.kokoro_models_dir) / self.kokoro_model_file
+
+    @property
+    def kokoro_voices_path(self) -> Path:
+        return _resolve(self.kokoro_models_dir) / self.kokoro_voices_file
+
+    @property
+    def kokoro_voices(self) -> dict[str, str]:
+        return {"fr": self.kokoro_voice_fr, "en": self.kokoro_voice_en}
 
     @property
     def voice_models(self) -> dict[str, VoiceModel]:
