@@ -24,6 +24,20 @@ React (Vite) ──▶ FastAPI ──▶ PyMuPDF ──▶ nettoyage ──▶ c
 | Audio | FFmpeg (concaténation + encodage MP3 128 kbps mono) |
 | Déploiement | Docker (image unique), Railway |
 
+## Démarrage rapide
+
+```bash
+./start.sh
+```
+
+Le script vérifie les prérequis, crée le venv et installe les dépendances si besoin, propose de télécharger les modèles de voix manquants, lance le backend et le frontend, puis affiche l'URL à ouvrir (http://localhost:5173). `Ctrl+C` arrête tout.
+
+- `./start.sh --prod` : build du frontend et un seul serveur sur http://localhost:8000 (comme en production).
+- `./start.sh --yes` : télécharge les modèles manquants sans demander.
+- `BACKEND_PORT=8010 FRONTEND_PORT=3000 ./start.sh` : autres ports.
+
+Les sections suivantes détaillent chaque étape pour un lancement manuel.
+
 ## Prérequis
 
 - macOS (testé sur Apple Silicon) ou Linux
