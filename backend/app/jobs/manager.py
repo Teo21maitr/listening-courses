@@ -14,7 +14,7 @@ from uuid import uuid4
 
 from app.config import Settings
 from app.errors import AppError, AudioNotReadyError, JobNotFoundError
-from app.jobs.pipeline import OUTPUT_FILENAME, run_pipeline
+from app.jobs.pipeline import CHUNKS_DIRNAME, OUTPUT_FILENAME, run_pipeline
 from app.models.job import Job, JobStatus
 from app.services.tts_service import TTSEngine
 
@@ -103,7 +103,9 @@ class JobManager:
             logger.exception("Job %s crashed", job_id)
             self._set(job_id, JobStatus.FAILED, job.progress, "Failed", error=UNEXPECTED_ERROR_MESSAGE)
         finally:
+            # Only the final MP3 is kept; intermediate files go whatever the outcome.
             pdf_path.unlink(missing_ok=True)
+            shutil.rmtree(job.work_dir / CHUNKS_DIRNAME, ignore_errors=True)
 
     def _reporter(self, job_id: str):  # noqa: ANN202 - returns a StatusReporter
         return lambda status, progress, message: self._set(job_id, status, progress, message)

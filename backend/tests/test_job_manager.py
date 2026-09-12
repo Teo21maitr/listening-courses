@@ -64,7 +64,9 @@ def test_run_success_updates_job(settings: Settings, monkeypatch: pytest.MonkeyP
 
 
 def test_run_crash_marks_job_failed_without_stack_trace(settings: Settings, monkeypatch: pytest.MonkeyPatch) -> None:
-    def crashing_pipeline(*args, **kwargs):
+    def crashing_pipeline(pdf_path, language, work_dir, report, settings, engine):
+        (work_dir / "chunks").mkdir()
+        (work_dir / "chunks" / "chunk_001.wav").write_bytes(b"wav")
         raise RuntimeError("secret internal details")
 
     monkeypatch.setattr("app.jobs.manager.run_pipeline", crashing_pipeline)
@@ -77,6 +79,7 @@ def test_run_crash_marks_job_failed_without_stack_trace(settings: Settings, monk
     assert job.status == JobStatus.FAILED
     assert job.error == UNEXPECTED_ERROR_MESSAGE
     assert "secret" not in (job.error or "")
+    assert not (job.work_dir / "chunks").exists()
 
 
 def test_cleanup_expired_removes_finished_jobs_only(settings: Settings) -> None:
