@@ -1,0 +1,13 @@
+.git
+.claude
+**/.env
+**/.venv
+**/__pycache__
+**/.pytest_cache
+backend/tmp
+backend/models/piper/**/*.onnx
+backend/models/piper/**/*.onnx.json
+backend/tests
+frontend/node_modules
+frontend/dist
+SPECS.md
