@@ -24,12 +24,23 @@ RUN pip install -r requirements.txt
 
 COPY backend/ ./
 
-# Voices are fetched explicitly at build time (never at server start-up).
-# Override the voices with --build-arg if you change PIPER_VOICE_* in config.
+# Models are fetched explicitly at build time (never at server start-up), for
+# the engine configured per language. Override with --build-arg, e.g.
+#   --build-arg TTS_ENGINE_FR=piper  or  --build-arg KOKORO_MODEL_FILE=kokoro-v1.0.int8.onnx
+ARG TTS_ENGINE_FR=kokoro
+ARG TTS_ENGINE_EN=kokoro
 ARG PIPER_VOICE_FR=fr_FR-siwis-medium
 ARG PIPER_VOICE_EN=en_US-lessac-medium
-ENV PIPER_VOICE_FR=${PIPER_VOICE_FR} \
-    PIPER_VOICE_EN=${PIPER_VOICE_EN}
+ARG KOKORO_MODEL_FILE=kokoro-v1.0.onnx
+ARG KOKORO_VOICE_FR=ff_siwis
+ARG KOKORO_VOICE_EN=af_heart
+ENV TTS_ENGINE_FR=${TTS_ENGINE_FR} \
+    TTS_ENGINE_EN=${TTS_ENGINE_EN} \
+    PIPER_VOICE_FR=${PIPER_VOICE_FR} \
+    PIPER_VOICE_EN=${PIPER_VOICE_EN} \
+    KOKORO_MODEL_FILE=${KOKORO_MODEL_FILE} \
+    KOKORO_VOICE_FR=${KOKORO_VOICE_FR} \
+    KOKORO_VOICE_EN=${KOKORO_VOICE_EN}
 RUN python scripts/download_voices.py
 
 COPY --from=frontend /frontend/dist /app/frontend/dist

@@ -11,7 +11,7 @@ from app.errors import FileTooLargeError, InvalidFileError, JobNotFoundError, Un
 from app.jobs.manager import JobManager
 from app.models.job import JobCreatedResponse, JobResponse
 from app.services.audio_service import check_ffmpeg, ffmpeg_available
-from app.services.tts_service import resolve_voice_paths
+from app.services.tts_service import check_engine_ready, engine_ready
 
 router = APIRouter(prefix="/api", tags=["jobs"])
 
@@ -32,14 +32,11 @@ ManagerDep = Annotated[JobManager, Depends(get_job_manager)]
 
 @router.get("/health")
 def health(settings: SettingsDep) -> dict[str, object]:
-    voices = settings.voice_models
     return {
         "status": "ok",
         "ffmpeg": ffmpeg_available(),
-        "voices": {
-            language: voice["model"].exists() and voice["config"].exists()
-            for language, voice in voices.items()
-        },
+        "engines": settings.engines,
+        "voices": {language: engine_ready(language, settings) for language in settings.engines},
         "max_pdf_size_mb": settings.max_pdf_size_mb,
     }
 
@@ -58,7 +55,7 @@ async def create_job(
     _validate_content_length(request, settings)
     # Fail fast on missing tools instead of accepting a job doomed to fail.
     check_ffmpeg()
-    resolve_voice_paths(language, settings)
+    check_engine_ready(language, settings)
 
     job = manager.create(filename=file.filename or "document.pdf", language=language)
     pdf_path = job.work_dir / UPLOAD_FILENAME
@@ -101,9 +98,9 @@ def _validate_job_id(job_id: str) -> str:
 
 
 def _validate_language(language: str, settings: Settings) -> None:
-    if language not in settings.voice_models:
+    if language not in settings.engines:
         raise UnknownLanguageError(
-            f"Unknown language '{language}'. Supported: {', '.join(settings.voice_models)}."
+            f"Unknown language '{language}'. Supported: {', '.join(settings.engines)}."
         )
 
 

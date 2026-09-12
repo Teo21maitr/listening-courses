@@ -30,6 +30,8 @@ _SOFT_LINE_BREAK_RE = re.compile(r"(?<!\n)\n(?!\n)")
 _LONG_URL_RE = re.compile(r"(?:https?://|www\.)\S{20,}", re.IGNORECASE)
 _BRACKET_CITATION_RE = re.compile(r"\s?\[\d{1,3}(?:\s*[,–-]\s*\d{1,3})*\]")
 _SENTENCE_END_CHARS = '.!?:;…"»)'
+_TERMINAL_PUNCTUATION = ".!?…:;"
+_CLOSING_CHARS = '"»)\']'
 
 # Header/footer detection: a line must appear on at least this share of pages
 # (and on at least MIN_REPEATED_PAGES pages) to be considered repeated.
@@ -52,7 +54,8 @@ def clean_text(text: str) -> str:
     text = merge_soft_line_breaks(text)
     text = remove_long_urls(text)
     text = remove_bracket_citations(text)
-    return collapse_whitespace(text)
+    text = collapse_whitespace(text)
+    return ensure_sentence_endings(text)
 
 
 def normalize_artifacts(text: str) -> str:
@@ -126,6 +129,33 @@ def collapse_whitespace(text: str) -> str:
     text = re.sub(r" *\n *", "\n", text)
     text = re.sub(r"\n{3,}", PARAGRAPH_SEPARATOR, text)
     return text.strip()
+
+
+def ensure_sentence_endings(text: str) -> str:
+    """End every paragraph with sentence punctuation.
+
+    Headings, list items and table cells rarely carry a final period; without it
+    the TTS model never sees an end-of-sentence token and reads them flat, glued
+    to the next sentence.
+    """
+    return PARAGRAPH_SEPARATOR.join(
+        _ensure_sentence_ending(paragraph) for paragraph in text.split(PARAGRAPH_SEPARATOR)
+    )
+
+
+def _ensure_sentence_ending(paragraph: str) -> str:
+    stripped = paragraph.rstrip()
+    if not stripped:
+        return paragraph
+    closing = ""
+    while stripped and stripped[-1] in _CLOSING_CHARS:
+        closing = stripped[-1] + closing
+        stripped = stripped[:-1]
+    if stripped.endswith(","):
+        stripped = stripped[:-1]
+    if stripped and stripped[-1] not in _TERMINAL_PUNCTUATION:
+        stripped += "."
+    return stripped + closing
 
 
 def _strip_edge_roman_numerals(lines: list[str]) -> list[str]:
