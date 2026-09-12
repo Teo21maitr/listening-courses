@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     piper_models_dir: Path = Path("./models/piper")
     piper_voice_fr: str = "fr_FR-siwis-medium"
     piper_voice_en: str = "en_US-lessac-medium"
-    tts_engine_fr: str = "piper"
+    tts_engine_fr: str = "kokoro"
     tts_engine_en: str = "kokoro"
     kokoro_models_dir: Path = Path("./models/kokoro")
     kokoro_model_file: str = "kokoro-v1.0.onnx"
